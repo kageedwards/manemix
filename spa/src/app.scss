@@ -1,0 +1,91 @@
+// app.scss — Design system custom properties and daisyUI overrides
+// This file is separate from app.css (which handles Tailwind/daisyUI directives).
+// Both are imported in the root layout.
+
+:root {
+  // Borders: 2008–2014 web aesthetic
+  --border-width: 1px;
+  --border-color: oklch(var(--bc) / 0.15);
+  --border-radius-sm: 2px;
+  --border-radius-md: 4px;
+  --border-radius-lg: 6px;
+
+  // Spacing scale (generous whitespace)
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  // Typography
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-size-caption: 0.75rem;
+  --font-size-body: 0.875rem;
+  --font-size-body-lg: 1rem;
+  --font-size-h4: 1.125rem;
+  --font-size-h3: 1.25rem;
+  --font-size-h2: 1.5rem;
+  --font-size-h1: 2rem;
+
+  // Player bar height
+  --player-height: 72px;
+  --player-height-compact: 56px;
+}
+
+// Override daisyUI defaults for the 2008–2014 aesthetic
+.btn {
+  border-radius: var(--border-radius-md);
+  border: var(--border-width) solid var(--border-color);
+  transition: filter 0.15s ease, background-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.5) !important;
+    border-color: oklch(var(--bc) / 0.35);
+  }
+}
+
+.card {
+  border-radius: var(--border-radius-md);
+  border: var(--border-width) solid var(--border-color);
+}
+
+[data-theme="manemix_dark"] .nav-logo {
+    filter: invert(1) brightness(1.8) sepia(1) hue-rotate(220deg) saturate(1.5);
+  }
+
+// Reserve space for persistent player
+body {
+  padding-bottom: var(--player-height);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body);
+}
+
+@media (max-width: 767px) {
+  body {
+    padding-bottom: var(--player-height-compact);
+  }
+}
+
+// --- Responsive layout ---
+
+// Mobile: single-column, compact spacing
+@media (max-width: 767px) {
+  .navbar {
+    padding-inline: var(--space-sm);
+  }
+}
+
+// Tablet: single-column, wider cards
+@media (min-width: 768px) and (max-width: 1023px) {
+  main {
+    max-width: 48rem;
+  }
+}
+
+// Desktop: centered container
+@media (min-width: 1024px) {
+  main {
+    max-width: 64rem;
+  }
+}

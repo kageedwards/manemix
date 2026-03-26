@@ -1,0 +1,147 @@
+@import url("common.css");
+
+audio {
+    margin: 25px auto;
+    display: block;
+    width: 90%;
+}
+
+.player {
+    height: 22px;
+    margin: 20px;
+    padding: 4px 0 4px 36px;
+    position: relative;
+    display: none;
+}
+
+.playpause {
+    height: 22px;
+    width: 22px;
+    background-image: url("/static/icons/pp.png");
+    cursor: pointer;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.hidden .playpause, .featurebox .playpause { background-image: url("/static/icons/pp-gray.png"); }
+
+.playpause { background-position: top left; }
+.playpause:hover { background-position: bottom left; }
+.playing .playpause { background-position: top right; }
+.playing .playpause:hover { background-position: bottom right; }
+
+.scrubberbar {
+    border: solid 1px #ddd;
+    height: 8px;
+    padding: 3px;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px -1px rgba(0,0,0,.2);
+    background: white;
+}
+
+.scrubber {
+    background-color: #406;
+    height: 8px;
+    width: 0;
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+
+.scrubberbar:hover .scrubber {
+    background-color: #619;
+}
+
+.hidden .scrubber {
+    background-color: #999;
+}
+
+.playtime, .volume {
+    margin: 5px 8px;
+    float: right;
+    font-size: .8em;
+    color: #555;
+}
+
+.volume img {
+    padding: 3px 2px;
+}
+
+.volume .slider, .volume .slider div {
+    height: 5px;
+    border-radius: 3px;
+}
+.volume .slider {
+    background-color: #bbb;
+    padding: 1px;
+    margin: 4px;
+    float: right;
+}
+.volume .slider div {
+    float: left;
+    background-color: #ddd;
+}
+
+.cover {
+    border: 1px solid #aaa;
+}
+
+#player-embed {
+    padding: 10px 10px 5px;
+    border-radius: 7px;
+    border: 1px solid #f0f0f0;
+    background: url("/static/player-bg.png") repeat-x bottom #FFF;
+}
+
+#player-embed a.pic {
+    display: block;
+    float: right;
+    margin-right: 15px;
+}
+#player-embed img.cover {
+    padding: 1px;
+    margin-top: 2px;
+}
+#player-embed img.logo {
+    opacity: 0.2;
+    -webkit-transition: opacity 0.4s linear;
+    -moz-transition: opacity 0.4s linear;
+}
+#player-embed img.logo:hover {
+    opacity: 0.5;
+}
+
+#player-embed h3, #player-embed h4 {
+    margin: 5px;
+    height: 1.2em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#player-embed audio {
+    width: 95%;
+    padding-top: 10px;
+    margin-bottom: 10px;
+}
+
+#player-embed .player {
+    margin: 20px 15px 10px 15px;
+}
+
+.nohtml5-notice {
+    display: none;
+}
+
+body.nohtml5 .nohtml5-notice {
+    display: block;
+    background: #fdb;
+    padding: 8px 25px;
+    border-bottom: #c50 1px solid;
+}
+
+#player-embed .nohtml5-notice {
+    font-size:0.7em;
+    border: #c50 1px solid;
+    padding: 8px;
+}

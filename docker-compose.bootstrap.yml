@@ -1,0 +1,21 @@
+services:
+  web:
+    volumes:
+      - ./conf/nginx/bootstrap.conf:/etc/nginx/templates/default.conf.template:ro
+      - certbot-webroot:/var/www/certbot:ro
+    ports:
+      - "80:80"
+    environment:
+      - DOMAIN=${DOMAIN}
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    depends_on:
+      - web
+
+volumes:
+  certbot-webroot:
+  certbot-certs:

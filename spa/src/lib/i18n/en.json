@@ -1,0 +1,21 @@
+{
+  "site_name": "Mane Mix",
+  "nav_home": "Home",
+  "nav_latest": "Latest",
+  "nav_artists": "Artists",
+  "nav_playlists": "Playlists",
+  "nav_albums": "Albums",
+  "nav_search_placeholder": "Search tracks…",
+  "nav_login": "Login",
+  "nav_logout": "Logout",
+  "player_play": "Play",
+  "player_pause": "Pause",
+  "player_next": "Next track",
+  "player_prev": "Previous track",
+  "track_download": "Download",
+  "track_tags": "Tags",
+  "track_comments": "Comments",
+  "track_post_comment": "Post a comment",
+  "theme_toggle": "Toggle theme",
+  "track_transcoding": "Transcoding…"
+}

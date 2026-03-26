@@ -1,0 +1,33 @@
+services:
+  spa:
+    build:
+      context: ./spa
+      dockerfile: Dockerfile
+    depends_on:
+      manemix:
+        condition: service_healthy
+    volumes:
+      - spa-build:/usr/share/spa
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /usr/share/spa/index.html"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  spa-web:
+    image: nginx:latest
+    depends_on:
+      spa:
+        condition: service_healthy
+      manemix:
+        condition: service_healthy
+    volumes:
+      - ./conf/nginx/spa.conf:/etc/nginx/conf.d/default.conf:ro
+      - spa-build:/usr/share/spa:ro
+      - ./static/:/usr/share/manemix/static/:ro
+      - manemix-data:/var/lib/manemix:ro
+    ports:
+      - "8644:8644"
+
+volumes:
+  spa-build:
