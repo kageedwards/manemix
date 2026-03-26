@@ -73,10 +73,10 @@ prod:
     #!/usr/bin/env bash
     set -euo pipefail
     FRONTEND="${FRONTEND:-legacy}"
-    if [ "$FRONTEND" = "spa" ]; then
-        docker compose {{ spa_prod_compose }} up --build -d
-    else
+    if [ "$FRONTEND" = "legacy" ]; then
         docker compose {{ prod_compose }} up --build -d
+    else
+        docker compose {{ spa_prod_compose }} up --build -d
     fi
 
 # Stop prod environment
@@ -84,10 +84,10 @@ prod-down:
     #!/usr/bin/env bash
     set -euo pipefail
     FRONTEND="${FRONTEND:-legacy}"
-    if [ "$FRONTEND" = "spa" ]; then
-        docker compose {{ spa_prod_compose }} down
-    else
+    if [ "$FRONTEND" = "legacy" ]; then
         docker compose {{ prod_compose }} down
+    else
+        docker compose {{ spa_prod_compose }} down
     fi
 
 # Tail prod logs
