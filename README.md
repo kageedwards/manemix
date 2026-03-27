@@ -4,6 +4,8 @@ A music hosting and sharing platform derived from [EqBeats](https://github.com/e
 
 The original C/C++ backend has been completely ported to modern Rust, along with a new frontend built on Svelte.
 
+![Rust Build](https://github.com/kageedwards/manemix/actions/workflows/rust.yml/badge.svg)
+
 ## Tech Stack
 
 - **Backend:** Rust (Axum), PostgreSQL, Redis
