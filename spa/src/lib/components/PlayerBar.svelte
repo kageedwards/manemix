@@ -1,6 +1,7 @@
 <script lang="ts">
   import { playerState, pause, resume, next, prev, seek, setVolume } from '$lib/stores/player';
   import { translations, t } from '$lib/i18n';
+  import VisualizerToggle from './VisualizerToggle.svelte';
 
   const interactiveTags = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
@@ -124,6 +125,9 @@
         aria-label="Volume"
       />
     </div>
+
+    <!-- Visualizer toggle -->
+    <VisualizerToggle />
   </div>
 
   <!-- Mobile compact player -->
@@ -142,5 +146,6 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       {/if}
     </button>
+    <VisualizerToggle />
   </div>
 {/if}

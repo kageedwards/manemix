@@ -5,6 +5,7 @@
   import Navbar from '$lib/components/Navbar.svelte';
   import PlayerBar from '$lib/components/PlayerBar.svelte';
   import AudioVisualizer from '$lib/components/AudioVisualizer.svelte';
+  import { visualizerEnabled } from '$lib/stores/visualizer';
   import { setAuth } from '$lib/stores/auth';
   import type { LayoutData } from './$types';
 
@@ -25,6 +26,8 @@
   <main class="max-w-5xl mx-auto px-4 py-6">
     {@render children()}
   </main>
-  <AudioVisualizer />
+  {#if $visualizerEnabled}
+    <AudioVisualizer />
+  {/if}
   <PlayerBar />
 {/if}
