@@ -52,6 +52,45 @@
   let progress = $derived(
     $playerState.duration > 0 ? ($playerState.currentTime / $playerState.duration) * 100 : 0
   );
+
+  // Mobile swipe handling with drag feedback
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let swipeOffsetX = $state(0);
+  let swiping = $state(false);
+  let locked = false; // axis lock: true = horizontal confirmed
+  const SWIPE_THRESHOLD = 50;
+
+  function handleTouchStart(e: TouchEvent) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    swipeOffsetX = 0;
+    swiping = false;
+    locked = false;
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    if (!locked) {
+      // Wait for enough movement to decide axis
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dy) > Math.abs(dx)) return; // vertical — bail out
+      locked = true;
+    }
+    swiping = true;
+    swipeOffsetX = dx;
+  }
+
+  function handleTouchEnd() {
+    if (locked && Math.abs(swipeOffsetX) >= SWIPE_THRESHOLD) {
+      if (swipeOffsetX < 0) next();
+      else prev();
+    }
+    swiping = false;
+    swipeOffsetX = 0;
+    locked = false;
+  }
 </script>
 
 {#if $playerState.currentTrack}
@@ -131,9 +170,18 @@
   </div>
 
   <!-- Mobile compact player -->
-  <div class="fixed bottom-0 left-0 right-0 bg-base-300 border-t border-base-content/10 z-50 flex md:hidden items-center px-3 gap-2" style="height: var(--player-height-compact)">
-    <div class="flex-1 min-w-0">
-      <span class="text-sm font-semibold truncate block">{$playerState.currentTrack.title}</span>
+  <div
+    class="fixed bottom-0 left-0 right-0 bg-base-300 border-t border-base-content/10 z-50 flex md:hidden items-center px-3 gap-2 touch-pan-y select-none"
+    style="height: var(--player-height-compact); -webkit-touch-callout: none; -webkit-user-select: none;"
+    ontouchstart={handleTouchStart}
+    ontouchmove={handleTouchMove}
+    ontouchend={handleTouchEnd}
+  >
+    <div class="flex-1 min-w-0 overflow-hidden">
+      <span
+        class="text-sm font-semibold truncate block"
+        style="transform: translateX({swipeOffsetX}px); opacity: {1 - Math.min(Math.abs(swipeOffsetX) / 150, 0.6)}; transition: {swiping ? 'none' : 'transform 0.2s ease, opacity 0.2s ease'};"
+      >{$playerState.currentTrack.title}</span>
     </div>
     <!-- Mini progress bar -->
     <div class="absolute top-0 left-0 right-0 h-0.5 bg-base-content/10">

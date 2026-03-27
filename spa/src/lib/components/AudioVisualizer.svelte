@@ -193,11 +193,28 @@
 </script>
 
 {#if $playerState.currentTrack}
-  <div class="fixed inset-0 pointer-events-none transition-opacity duration-1000" style="z-index: -1; bottom: var(--player-height); opacity: {$playerState.isPlaying ? 1 : 0};">
+  <div class="viz-canvas fixed inset-0 pointer-events-none transition-opacity duration-1000" style="z-index: -1; opacity: {$playerState.isPlaying ? 1 : 0};">
     <canvas bind:this={canvas} class="w-full h-full"></canvas>
   </div>
-  <div class="fixed right-2 text-xs opacity-30 pointer-events-auto group text-right" style="bottom: calc(var(--player-height) + 0.25rem); z-index: 1;">
+  <div class="viz-credit fixed right-2 text-xs opacity-30 pointer-events-auto group text-right hidden md:block" style="z-index: 1;">
     <span class="group-hover:opacity-0 transition-opacity duration-300">viz</span>
     <a href="https://codepen.io/noeldelgado" target="_blank" rel="noopener noreferrer noindex nofollow" class="absolute right-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:underline whitespace-nowrap">@pixelia_me</a>
   </div>
 {/if}
+
+<style>
+  .viz-canvas {
+    bottom: var(--player-height-compact);
+  }
+  .viz-credit {
+    bottom: calc(var(--player-height-compact) + 0.25rem);
+  }
+  @media (min-width: 768px) {
+    .viz-canvas {
+      bottom: var(--player-height);
+    }
+    .viz-credit {
+      bottom: calc(var(--player-height) + 0.25rem);
+    }
+  }
+</style>
