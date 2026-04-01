@@ -24,9 +24,11 @@
   let myPlaylists = $state<PlaylistSummary[]>([]);
   let showPlaylistMenu = $state(false);
   let playlistMsg = $state('');
+  let playlistsLoaded = $state(false);
 
   $effect(() => {
-    if ($auth.logged_in && myPlaylists.length === 0) {
+    if ($auth.logged_in && !playlistsLoaded) {
+      playlistsLoaded = true;
       apiFetch<{ playlists: PlaylistSummary[] }>(`/user/${$auth.uid}`).then(u => {
         myPlaylists = u.playlists ?? [];
       }).catch(() => {});
