@@ -23,6 +23,7 @@ export interface ExtendedTrack extends Track {
   is_copyright: boolean;
   license_key: string;
   airable: boolean;
+  events?: EventItem[];
 }
 
 export interface UserProfile {
@@ -72,6 +73,8 @@ export interface EventItem {
   fuzzy_time: string;
   is_publish: boolean;
   is_comment: boolean;
+  is_track_comment: boolean;
+  is_user_comment: boolean;
   is_favorite: boolean;
   is_follow: boolean;
   source_uid: number;

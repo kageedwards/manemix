@@ -17,7 +17,7 @@ pub struct Event {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum EventType { Publish, Comment, Favorite, Follow }
+pub enum EventType { Publish, Comment, TrackComment, UserComment, Favorite, Follow }
 
 #[derive(Debug, Serialize)]
 pub struct EventContext {
@@ -26,6 +26,8 @@ pub struct EventContext {
     pub fuzzy_time: String,
     pub is_publish: bool,
     pub is_comment: bool,
+    pub is_track_comment: bool,
+    pub is_user_comment: bool,
     pub is_favorite: bool,
     pub is_follow: bool,
     pub source_uid: i32,
@@ -46,7 +48,9 @@ impl Event {
             utc_date: format_time(&self.date, "%F %R"),
             fuzzy_time: fuzzy_time(&self.date),
             is_publish: self.event_type == EventType::Publish,
-            is_comment: self.event_type == EventType::Comment,
+            is_comment: matches!(self.event_type, EventType::Comment | EventType::TrackComment | EventType::UserComment),
+            is_track_comment: self.event_type == EventType::TrackComment,
+            is_user_comment: self.event_type == EventType::UserComment,
             is_favorite: self.event_type == EventType::Favorite,
             is_follow: self.event_type == EventType::Follow,
             source_uid: self.source.id,
@@ -64,7 +68,7 @@ impl Event {
 
 pub async fn for_user(pool: &PgPool, uid: i32, limit: i64) -> Vec<Event> {
     fetch_events(pool,
-        "WHERE (source_id = $1 OR (target_id = $1 AND type = 'comment')) \
+        "WHERE (source_id = $1 OR (target_id = $1 AND type IN ('comment', 'track_comment', 'user_comment'))) \
          AND (track_id IS NULL OR track_id NOT IN (SELECT id FROM tracks WHERE visible = false))",
         Some(uid), limit
     ).await
@@ -72,7 +76,8 @@ pub async fn for_user(pool: &PgPool, uid: i32, limit: i64) -> Vec<Event> {
 
 pub async fn for_track(pool: &PgPool, tid: i32) -> Vec<Event> {
     fetch_events(pool,
-        "WHERE track_id = $1",
+        "WHERE (type = 'track_comment' AND track_id = $1) \
+         OR (type = 'comment' AND track_id = $1)",
         Some(tid), 0
     ).await
 }
@@ -107,6 +112,8 @@ async fn fetch_events(pool: &PgPool, cond: &str, bind: Option<i32>, limit: i64) 
     rows.unwrap_or_default().into_iter().map(|r| {
         let event_type = match r.r#type.as_str() {
             "publish" => EventType::Publish,
+            "track_comment" => EventType::TrackComment,
+            "user_comment" => EventType::UserComment,
             "comment" => EventType::Comment,
             "favorite" => EventType::Favorite,
             _ => EventType::Follow,
@@ -157,20 +164,33 @@ pub async fn push_event(pool: &PgPool, event_type: &str, source: &User, target: 
     .await;
 }
 
-/// Insert a comment event.
-pub async fn push_comment(pool: &PgPool, source: &User, target: &User, track: Option<&crate::models::track::Track>, message: &str) {
-    let tid = track.map(|t| t.id).unwrap_or(0);
-    let ttitle = track.map(|t| t.title.as_str()).unwrap_or("");
+/// Insert a track comment event.
+pub async fn push_track_comment(pool: &PgPool, source: &User, target: &User, track: &crate::models::track::Track, message: &str) {
     let _ = sqlx::query(
         "INSERT INTO events (type, target_id, target_name, source_id, source_name, track_id, track_title, message, date) \
-         VALUES ('comment'::event_type, $1, $2, $3, $4, $5, $6, $7, now())"
+         VALUES ('track_comment'::event_type, $1, $2, $3, $4, $5, $6, $7, now())"
     )
     .bind(target.id)
     .bind(&target.name)
     .bind(source.id)
     .bind(&source.name)
-    .bind(tid)
-    .bind(ttitle)
+    .bind(track.id)
+    .bind(&track.title)
+    .bind(message)
+    .execute(pool)
+    .await;
+}
+
+/// Insert a user-page comment event.
+pub async fn push_user_comment(pool: &PgPool, source: &User, target: &User, message: &str) {
+    let _ = sqlx::query(
+        "INSERT INTO events (type, target_id, target_name, source_id, source_name, track_id, track_title, message, date) \
+         VALUES ('user_comment'::event_type, $1, $2, $3, $4, 0, '', $5, now())"
+    )
+    .bind(target.id)
+    .bind(&target.name)
+    .bind(source.id)
+    .bind(&source.name)
     .bind(message)
     .execute(pool)
     .await;

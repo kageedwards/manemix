@@ -27,10 +27,11 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+	const { headers: initHeaders, ...rest } = init ?? {};
 	const res = await fetch(`${API_BASE}${API_PREFIX}${path}`, {
 		credentials: 'include',
-		headers: { Accept: 'application/json', ...init?.headers },
-		...init
+		...rest,
+		headers: { Accept: 'application/json', ...(initHeaders as Record<string, string>) }
 	});
 	if (!res.ok) {
 		const err = await res.json().catch(() => ({ error: res.statusText }));

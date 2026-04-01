@@ -194,11 +194,11 @@ fn api_v1_routes() -> Router<AppState> {
         // Social actions
         .route("/track/{tid}/favorite", post(social::favorite_track))
         .route("/track/{tid}/unfavorite", post(social::unfavorite_track))
-        .route("/track/{tid}/comment", post(social::comment_track))
+        .route("/track/{tid}/comment", post(social::comment_track_json))
         .route("/track/{tid}/feature", post(feature_actions::feature_track))
         .route("/user/{uid}/follow", post(social::follow_user))
         .route("/user/{uid}/unfollow", post(social::unfollow_user))
-        .route("/user/{uid}/comment", post(social::comment_user))
+        .route("/user/{uid}/comment", post(social::comment_user_json))
 
         // Track lists
         .route("/tracks/latest", get(tracks::latest_json))

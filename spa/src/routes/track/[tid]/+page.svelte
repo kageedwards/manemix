@@ -2,18 +2,23 @@
   import { play } from '$lib/stores/player';
   import { auth } from '$lib/stores/auth';
   import { tt } from '$lib/i18n';
-  import { apiFetch, addTrackToPlaylist } from '$lib/api/client';
+  import { apiFetch, addTrackToPlaylist, getTrack } from '$lib/api/client';
   import { trackStatuses, monitorTrack, unmonitorTrack } from '$lib/stores/trackStatus';
   import LicenseBadge from '$lib/components/LicenseBadge.svelte';
   import EventList from '$lib/components/EventList.svelte';
   import FavoriteButton from '$lib/components/FavoriteButton.svelte';
   import CommentForm from '$lib/components/CommentForm.svelte';
-  import type { PlaylistSummary } from '$lib/types/index.js';
+  import type { PlaylistSummary, EventItem } from '$lib/types/index.js';
   import type { PageData } from './$types';
 
   let { data } = $props<{ data: PageData }>();
   let track = $derived(data.track);
+  let events = $state<EventItem[]>([]);
   let isOwner = $derived($auth.logged_in && $auth.uid === track.uid);
+
+  $effect(() => {
+    events = data.track.events ?? [];
+  });
   let ready = $derived($trackStatuses[track.tid]?.ready ?? true);
 
   $effect(() => {
@@ -42,6 +47,13 @@
       showPlaylistMenu = false;
       setTimeout(() => playlistMsg = '', 2000);
     } catch { playlistMsg = 'Failed'; }
+  }
+
+  async function refreshComments() {
+    try {
+      const updated = await getTrack(track.tid);
+      events = updated.events ?? [];
+    } catch {}
   }
 
   function handlePlay() {
@@ -149,6 +161,11 @@
   <!-- Comments -->
   <section class="py-8 border-t border-base-300">
     <h3 class="text-lg font-bold mb-4">{$tt('track_comments')}</h3>
-    <CommentForm target="track" id={track.tid} />
+    {#if events.length > 0}
+      <div class="mb-6">
+        <EventList {events} />
+      </div>
+    {/if}
+    <CommentForm target="track" id={track.tid} onCommentPosted={refreshComments} />
   </section>
 </div>

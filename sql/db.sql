@@ -75,7 +75,7 @@ CREATE TABLE resets (
     token text unique not null
 );
 
-CREATE TYPE event_type AS ENUM ('publish', 'comment', 'favorite', 'follow');
+CREATE TYPE event_type AS ENUM ('publish', 'comment', 'favorite', 'follow', 'track_comment', 'user_comment');
 CREATE TABLE events (
     id serial primary key,
     type event_type not null,

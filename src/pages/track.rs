@@ -74,9 +74,15 @@ pub async fn json(
         None => return StatusCode::NOT_FOUND.into_response(),
     };
 
-    let mut headers = HeaderMap::new();
-    headers.insert("Content-Type", HeaderValue::from_static("application/json"));
-    (headers, serde_json::to_string(&t.context(&state.manemix_dir)).unwrap_or_default()).into_response()
+    let events = event::for_track(&state.db, tid).await;
+    let events_ctx: Vec<_> = events.iter().map(|e| e.context()).collect();
+
+    let mut track_json = serde_json::to_value(&t.context(&state.manemix_dir)).unwrap_or_default();
+    if let Some(obj) = track_json.as_object_mut() {
+        obj.insert("events".into(), serde_json::to_value(&events_ctx).unwrap_or_default());
+    }
+
+    axum::Json(track_json).into_response()
 }
 
 /// GET /track/:tid/embed

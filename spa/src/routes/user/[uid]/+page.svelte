@@ -1,6 +1,7 @@
 <script lang="ts">
   import { tt } from '$lib/i18n';
   import { auth } from '$lib/stores/auth';
+  import { getUser } from '$lib/api/client';
   import TrackList from '$lib/components/TrackList.svelte';
   import PlaylistCard from '$lib/components/PlaylistCard.svelte';
   import AlbumCard from '$lib/components/AlbumCard.svelte';
@@ -8,9 +9,15 @@
   import FollowButton from '$lib/components/FollowButton.svelte';
   import CommentForm from '$lib/components/CommentForm.svelte';
   import type { PageData } from './$types';
+  import type { EventItem } from '$lib/types/index.js';
 
   let { data } = $props<{ data: PageData }>();
   let user = $derived(data.user);
+  let events = $state<EventItem[]>([]);
+
+  $effect(() => {
+    events = data.user.events ?? [];
+  });
   let isOwnProfile = $derived($auth.logged_in && $auth.uid === user.uid);
   let visiblePlaylists = $derived(
     isOwnProfile ? user.playlists : user.playlists.filter(p => p.is_public)
@@ -19,6 +26,13 @@
     isOwnProfile ? (user.albums ?? []) : (user.albums ?? []).filter(a => a.is_public)
   );
   let gravatarUrl = $derived(`https://www.gravatar.com/avatar/${user.email_md5}?d=retro&s=128`);
+
+  async function refreshEvents() {
+    try {
+      const updated = await getUser(user.uid);
+      events = updated.events ?? [];
+    } catch {}
+  }
 </script>
 
 <svelte:head>
@@ -92,16 +106,16 @@
   {/if}
 
   <!-- Activity -->
-  {#if user.events.length > 0}
+  {#if events.length > 0}
     <section>
       <h2 class="text-lg font-bold mb-3">Recent Activity</h2>
-      <EventList events={user.events} />
+      <EventList {events} />
     </section>
   {/if}
 
   <!-- Comments -->
   <section>
     <h3 class="text-sm font-semibold mb-2">Leave a comment</h3>
-    <CommentForm target="user" id={user.uid} />
+    <CommentForm target="user" id={user.uid} onCommentPosted={refreshEvents} />
   </section>
 </div>

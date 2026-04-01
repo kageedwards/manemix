@@ -256,7 +256,7 @@ pub struct CommentForm {
 }
 
 #[derive(Deserialize)]
-struct CommentJson {
+pub struct CommentJson {
     msg: Option<String>,
     name: Option<String>,
 }
@@ -276,10 +276,16 @@ pub async fn comment_track(
     let is_json = is_json_content(&headers);
 
     let (msg, source_name, is_bot) = if is_json {
-        let parsed: CommentJson = serde_json::from_slice(&body).unwrap_or(CommentJson {
-            msg: None,
-            name: None,
-        });
+        let parsed: CommentJson = match serde_json::from_slice(&body) {
+            Ok(p) => p,
+            Err(e) => {
+                tracing::warn!("comment_track: JSON parse error: {e}, body len={}", body.len());
+                return (
+                    axum::http::StatusCode::BAD_REQUEST,
+                    Json(serde_json::json!({ "error": "parse_error", "message": format!("Invalid JSON: {e}") })),
+                ).into_response();
+            }
+        };
         (parsed.msg.unwrap_or_default(), parsed.name, false)
     } else {
         let form: CommentForm = serde_urlencoded::from_bytes(&body).unwrap_or(CommentForm {
@@ -305,6 +311,13 @@ pub async fn comment_track(
     let is_spam = msg.contains("<a") || msg.contains("[url");
 
     if msg.is_empty() || is_bot || is_spam {
+        if is_json {
+            let reason = if msg.is_empty() { "Message cannot be empty" } else { "Message rejected" };
+            return (
+                axum::http::StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": "bad_request", "message": reason })),
+            ).into_response();
+        }
         return err_or_redirect(&headers, &format!("/track/{tid}"));
     }
 
@@ -323,7 +336,7 @@ pub async fn comment_track(
             name: source_name.unwrap_or_default(),
         });
 
-    event::push_comment(&state.db, &source, &t.artist, Some(&t), &msg).await;
+    event::push_track_comment(&state.db, &source, &t.artist, &t, &msg).await;
 
     // Email notification
     if let Some(acct) = crate::models::account::Account::by_id(&state.db, t.artist.id).await {
@@ -356,10 +369,16 @@ pub async fn comment_user(
     let is_json = is_json_content(&headers);
 
     let (msg, source_name, is_bot) = if is_json {
-        let parsed: CommentJson = serde_json::from_slice(&body).unwrap_or(CommentJson {
-            msg: None,
-            name: None,
-        });
+        let parsed: CommentJson = match serde_json::from_slice(&body) {
+            Ok(p) => p,
+            Err(e) => {
+                tracing::warn!("comment_user: JSON parse error: {e}, body len={}", body.len());
+                return (
+                    axum::http::StatusCode::BAD_REQUEST,
+                    Json(serde_json::json!({ "error": "parse_error", "message": format!("Invalid JSON: {e}") })),
+                ).into_response();
+            }
+        };
         (parsed.msg.unwrap_or_default(), parsed.name, false)
     } else {
         let form: CommentForm = serde_urlencoded::from_bytes(&body).unwrap_or(CommentForm {
@@ -383,6 +402,13 @@ pub async fn comment_user(
     let is_spam = msg.contains("<a") || msg.contains("[url");
 
     if msg.is_empty() || is_bot || is_spam {
+        if is_json {
+            let reason = if msg.is_empty() { "Message cannot be empty" } else { "Message rejected" };
+            return (
+                axum::http::StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": "bad_request", "message": reason })),
+            ).into_response();
+        }
         return err_or_redirect(&headers, &format!("/user/{uid}"));
     }
 
@@ -401,7 +427,7 @@ pub async fn comment_user(
             name: source_name.unwrap_or_default(),
         });
 
-    event::push_comment(&state.db, &source, &u, None, &msg).await;
+    event::push_user_comment(&state.db, &source, &u, &msg).await;
 
     // Email notification
     if let Some(acct) = crate::models::account::Account::by_id(&state.db, uid).await {
@@ -417,4 +443,118 @@ pub async fn comment_user(
     }
 
     ok_or_redirect(&headers, &format!("/user/{uid}"))
+}
+
+// ---------------------------------------------------------------------------
+// Dedicated JSON comment handlers for the SPA API
+// ---------------------------------------------------------------------------
+
+/// POST /api/v1/track/:tid/comment — JSON-only
+pub async fn comment_track_json(
+    State(state): State<AppState>,
+    crate::session::OptionalSession(sess, _theme): crate::session::OptionalSession,
+    Path(tid): Path<i32>,
+    Json(body): Json<CommentJson>,
+) -> Response {
+    let t = match Track::by_id(&state.db, tid).await {
+        Some(t) => t,
+        None => return (
+            axum::http::StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "error": "not_found" })),
+        ).into_response(),
+    };
+
+    let msg = body.msg.unwrap_or_default();
+    if msg.is_empty() {
+        return (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "bad_request", "message": "Message cannot be empty" })),
+        ).into_response();
+    }
+    if msg.contains("<a") || msg.contains("[url") {
+        return (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "bad_request", "message": "Message rejected" })),
+        ).into_response();
+    }
+
+    if let Some(ref s) = sess {
+        Session::new_nonce(&state.db, &s.sid).await;
+    }
+
+    let source = sess
+        .as_ref()
+        .map(|s| s.user.clone())
+        .unwrap_or_else(|| User { id: 0, name: body.name.unwrap_or_default() });
+
+    event::push_track_comment(&state.db, &source, &t.artist, &t, &msg).await;
+
+    if let Some(acct) = crate::models::account::Account::by_id(&state.db, t.artist.id).await {
+        if acct.notify && acct.user.id != source.id {
+            let mail_body = format!(
+                "{} posted a comment on {}:\n\n{}\n\n\
+                 You can view it here: {}/track/{}\n\
+                 Disable notifications: {}/account",
+                source.name, t.title, msg, state.base_url, tid, state.base_url
+            );
+            crate::models::mail::send(&acct.email, "Manemix comment notification", &mail_body);
+        }
+    }
+
+    Json(serde_json::json!({ "ok": true })).into_response()
+}
+
+/// POST /api/v1/user/:uid/comment — JSON-only
+pub async fn comment_user_json(
+    State(state): State<AppState>,
+    crate::session::OptionalSession(sess, _theme): crate::session::OptionalSession,
+    Path(uid): Path<i32>,
+    Json(body): Json<CommentJson>,
+) -> Response {
+    let u = match User::by_id(&state.db, uid).await {
+        Some(u) => u,
+        None => return (
+            axum::http::StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "error": "not_found" })),
+        ).into_response(),
+    };
+
+    let msg = body.msg.unwrap_or_default();
+    if msg.is_empty() {
+        return (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "bad_request", "message": "Message cannot be empty" })),
+        ).into_response();
+    }
+    if msg.contains("<a") || msg.contains("[url") {
+        return (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "bad_request", "message": "Message rejected" })),
+        ).into_response();
+    }
+
+    if let Some(ref s) = sess {
+        Session::new_nonce(&state.db, &s.sid).await;
+    }
+
+    let source = sess
+        .as_ref()
+        .map(|s| s.user.clone())
+        .unwrap_or_else(|| User { id: 0, name: body.name.unwrap_or_default() });
+
+    event::push_user_comment(&state.db, &source, &u, &msg).await;
+
+    if let Some(acct) = crate::models::account::Account::by_id(&state.db, uid).await {
+        if acct.notify && acct.user.id != source.id {
+            let mail_body = format!(
+                "{} posted a comment on your user page:\n\n{}\n\n\
+                 You can view it here: {}/user/{}\n\
+                 Disable notifications: {}/account",
+                source.name, msg, state.base_url, uid, state.base_url
+            );
+            crate::models::mail::send(&acct.email, "Manemix comment notification", &mail_body);
+        }
+    }
+
+    Json(serde_json::json!({ "ok": true })).into_response()
 }
