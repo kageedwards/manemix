@@ -79,7 +79,7 @@
     </a>
     <span class="text-xs opacity-50 ml-2">{track.date}</span>
     {#if !track.is_visible}
-      <span class="badge badge-xs badge-warning ml-2">Unpublished</span>
+      <span class="badge badge-sm bg-warning text-warning-content ml-2">Unpublished</span>
     {/if}
     {#if !ready}
       <span class="text-xs text-warning ml-2">{t($translations, 'track_transcoding')}</span>
