@@ -82,8 +82,46 @@ pub async fn account_submit(
     let mut sess = sess;
     sess.nonce = new_nonce;
 
-    let name = form.name.unwrap_or_default();
-    let email = form.email.unwrap_or_default();
+    match apply_account_changes(&state, &a, &form).await {
+        Ok(_) => {
+            let updated = Account::by_id(&state.db, sess.user.id).await.unwrap();
+            Html(render_account(&state, &updated, &sess, "", "Changes applied.")).into_response()
+        }
+        Err(msg) => Html(render_account(&state, &a, &sess, &msg, "")).into_response(),
+    }
+}
+
+/// POST /api/v1/account — JSON account update for the SPA (no nonce required)
+pub async fn account_submit_json(
+    State(state): State<AppState>,
+    RequiredSession(sess): RequiredSession,
+    Form(form): Form<AccountForm>,
+) -> Response {
+    let a = match Account::by_id(&state.db, sess.user.id).await {
+        Some(a) => a,
+        None => {
+            let body = serde_json::json!({"error": "Account not found"});
+            return (axum::http::StatusCode::NOT_FOUND, axum::Json(body)).into_response();
+        }
+    };
+
+    match apply_account_changes(&state, &a, &form).await {
+        Ok(_) => axum::Json(serde_json::json!({"ok": true})).into_response(),
+        Err(msg) => {
+            let body = serde_json::json!({"error": msg});
+            (axum::http::StatusCode::BAD_REQUEST, axum::Json(body)).into_response()
+        }
+    }
+}
+
+/// Shared validation and update logic for account changes.
+async fn apply_account_changes(
+    state: &AppState,
+    a: &Account,
+    form: &AccountForm,
+) -> Result<(), String> {
+    let name = form.name.clone().unwrap_or_default();
+    let email = form.email.clone().unwrap_or_default();
 
     // Validate name change
     let final_name = if !name.is_empty() && name != a.user.name {
@@ -91,7 +129,7 @@ pub async fn account_submit(
             "SELECT EXISTS (SELECT 1 FROM users WHERE lower(name) = lower($1))"
         ).bind(&name).fetch_one(&state.db).await.unwrap_or(true);
         if exists {
-            return Html(render_account(&state, &a, &sess, "Name already in use.", "")).into_response();
+            return Err("Name already in use.".into());
         }
         name
     } else {
@@ -101,13 +139,13 @@ pub async fn account_submit(
     // Validate email change
     let final_email = if !email.is_empty() && email != a.email {
         if !valid_email(&email) {
-            return Html(render_account(&state, &a, &sess, "Invalid email address.", "")).into_response();
+            return Err("Invalid email address.".into());
         }
         let exists: bool = sqlx::query_scalar(
             "SELECT EXISTS (SELECT 1 FROM users WHERE lower(email) = lower($1))"
         ).bind(&email).fetch_one(&state.db).await.unwrap_or(true);
         if exists {
-            return Html(render_account(&state, &a, &sess, "Email already in use.", "")).into_response();
+            return Err("Email already in use.".into());
         }
         email
     } else {
@@ -115,16 +153,15 @@ pub async fn account_submit(
     };
 
     // Password change
-    let oldpw = form.oldpw.unwrap_or_default();
-    let newpw = form.newpw.unwrap_or_default();
-    let newpwconf = form.newpwconf.unwrap_or_default();
+    let oldpw = form.oldpw.clone().unwrap_or_default();
+    let newpw = form.newpw.clone().unwrap_or_default();
+    let newpwconf = form.newpwconf.clone().unwrap_or_default();
     if !oldpw.is_empty() && !newpw.is_empty() {
         if newpw != newpwconf {
-            return Html(render_account(&state, &a, &sess, "Passwords mismatch.", "")).into_response();
+            return Err("Passwords mismatch.".into());
         }
-        // Verify old password
         if Session::authenticate(&state.db, &a.email, &oldpw).await.is_none() {
-            return Html(render_account(&state, &a, &sess, "Wrong password.", "")).into_response();
+            return Err("Wrong password.".into());
         }
         let hash = bcrypt::hash(&newpw, bcrypt::DEFAULT_COST).unwrap();
         let _ = sqlx::query("UPDATE users SET password = $1 WHERE id = $2")
@@ -132,8 +169,8 @@ pub async fn account_submit(
     }
 
     // Apply changes
-    let notify = !form.notify.unwrap_or_default().is_empty();
-    let about = form.about.unwrap_or_default();
+    let notify = !form.notify.clone().unwrap_or_default().is_empty();
+    let about = form.about.clone().unwrap_or_default();
     let theme = match form.theme.as_deref() {
         Some("light") => "light",
         Some("dark") => "dark",
@@ -151,8 +188,7 @@ pub async fn account_submit(
     .execute(&state.db)
     .await;
 
-    let updated = Account::by_id(&state.db, sess.user.id).await.unwrap();
-    Html(render_account(&state, &updated, &sess, "", "Changes applied.")).into_response()
+    Ok(())
 }
 
 pub async fn delete_page(
