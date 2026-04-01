@@ -36,7 +36,7 @@
 </script>
 
 {#if tracks.length > 0}
-<section class="hero-carousel relative w-full overflow-hidden rounded-xl mb-8">
+<section class="hero-carousel relative w-full overflow-hidden mb-8">
   <!-- Background art (blurred) -->
   <div class="absolute inset-0 z-0">
     {#if track.has_art}
@@ -46,12 +46,12 @@
         class="w-full h-full object-cover blur-2xl scale-110 opacity-40"
         aria-hidden="true"
       />
+      <div class="absolute inset-0 bg-gradient-to-t from-base-100 via-base-100/60 to-transparent"></div>
     {/if}
-    <div class="absolute inset-0 bg-gradient-to-t from-base-100 via-base-100/60 to-transparent"></div>
   </div>
 
   <!-- Content -->
-  <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 p-6 md:p-10">
+  <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 py-10 md:py-14">
     <!-- Art -->
     <a href="/track/{track.tid}" class="shrink-0">
       {#if track.has_art}
@@ -134,6 +134,5 @@
   .hero-carousel {
     min-height: 30vh;
     max-height: 45vh;
-    background: oklch(var(--b2));
   }
 </style>
