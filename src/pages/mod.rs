@@ -21,6 +21,8 @@ mod track_api;
 mod playlist_api;
 mod album_api;
 pub mod queue;
+mod ticker;
+mod events_api;
 
 #[cfg(test)]
 mod tests;
@@ -245,6 +247,10 @@ fn api_v1_routes() -> Router<AppState> {
 
         // Playback queue
         .route("/queue/next", post(queue::next_tracks))
+
+        // Ticker & activity
+        .route("/ticker", get(ticker::ticker_json))
+        .route("/events/recent", get(events_api::recent_json))
 
         // oEmbed
         .route("/oembed", get(oembed::oembed))

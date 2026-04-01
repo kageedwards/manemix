@@ -77,6 +77,14 @@ pub async fn for_track(pool: &PgPool, tid: i32) -> Vec<Event> {
     ).await
 }
 
+/// Global recent events (excludes hidden tracks), for the homepage activity feed.
+pub async fn recent(pool: &PgPool, limit: i64) -> Vec<Event> {
+    fetch_events(pool,
+        "WHERE (track_id IS NULL OR track_id NOT IN (SELECT id FROM tracks WHERE visible = false))",
+        None, limit
+    ).await
+}
+
 async fn fetch_events(pool: &PgPool, cond: &str, bind: Option<i32>, limit: i64) -> Vec<Event> {
     let limit_clause = if limit > 0 { format!(" LIMIT {limit}") } else { String::new() };
     let sql = format!(

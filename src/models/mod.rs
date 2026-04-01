@@ -9,3 +9,4 @@ pub mod stat;
 pub mod feature;
 pub mod session;
 pub mod mail;
+pub mod ticker;
