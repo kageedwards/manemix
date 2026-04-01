@@ -1,15 +1,22 @@
-import { getFeaturedTracks, getLatestTracks, getRandomTracks } from '$lib/api/client';
-import type { Track } from '$lib/types/index.js';
+import {
+	getFeaturedTracks,
+	getLatestTracks,
+	getTicker,
+	getRecentEvents
+} from '$lib/api/client';
+import type { Track, TickerItem, EventItem } from '$lib/types/index.js';
 
 export async function load(): Promise<{
 	featured: Track[];
 	latest: Track[];
-	random: Track[];
+	ticker: TickerItem[];
+	events: EventItem[];
 }> {
-	const [featured, latest, random] = await Promise.all([
+	const [featured, latest, ticker, events] = await Promise.all([
 		getFeaturedTracks().catch(() => []),
 		getLatestTracks().catch(() => []),
-		getRandomTracks().catch(() => [])
+		getTicker().catch(() => []),
+		getRecentEvents().catch(() => [])
 	]);
-	return { featured, latest, random };
+	return { featured, latest, ticker, events };
 }

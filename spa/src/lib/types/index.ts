@@ -123,3 +123,9 @@ export interface PlaybackContext {
   context: string;
   param?: string;
 }
+
+export interface TickerItem {
+  id: number;
+  title: string;
+  url: string;
+}

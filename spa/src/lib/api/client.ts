@@ -148,3 +148,7 @@ export const removeTrackFromAlbum = (albumId: number, trackId: number) =>
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ track_id: trackId })
 	});
+
+// Ticker & activity
+export const getTicker = () => apiFetch<import('$lib/types/index.js').TickerItem[]>(`/ticker`);
+export const getRecentEvents = () => apiFetch<import('$lib/types/index.js').EventItem[]>(`/events/recent`);
