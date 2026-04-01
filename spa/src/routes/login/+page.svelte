@@ -18,7 +18,7 @@
       await apiFetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ email, password }).toString()
+        body: new URLSearchParams({ email, pw: password }).toString()
       });
       const me = await getMe();
       setAuth(me);
