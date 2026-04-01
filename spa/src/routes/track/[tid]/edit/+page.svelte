@@ -8,6 +8,7 @@
   import type { ExtendedTrack } from '$lib/types/index.js';
 
   let tid = $derived(Number($page.params.tid));
+  let isNew = $derived($page.url.searchParams.get('new') === '1');
   let track = $state<ExtendedTrack | null>(null);
   let title = $state('');
   let tags = $state('');
@@ -138,6 +139,13 @@
 
 <div class="max-w-lg mx-auto">
   <a href="/track/{tid}" class="text-sm text-primary hover:underline mb-4 block">← Back to track</a>
+
+  {#if isNew}
+    <div class="bg-info/10 border border-info/30 rounded-lg px-4 py-3 mb-6">
+      <p class="text-sm font-medium">Your track was uploaded successfully.</p>
+      <p class="text-sm opacity-70 mt-1">It's not published yet. Add a title, tags, notes, and cover art, then hit Publish when you're ready.</p>
+    </div>
+  {/if}
 
   {#if track}
     <h1 class="text-xl font-bold mb-6">Edit: {track.title}</h1>

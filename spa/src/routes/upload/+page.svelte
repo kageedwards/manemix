@@ -31,7 +31,7 @@
         });
         const data = await res.json();
         if (data.success && files.length === 1) {
-          goto(`/track/${data.tid}`);
+          goto(`/track/${data.tid}/edit?new=1`);
           return;
         } else if (!data.success) {
           error = `Failed to upload ${file.name}`;
