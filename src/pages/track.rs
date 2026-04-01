@@ -23,6 +23,14 @@ pub async fn show(
         None => return StatusCode::NOT_FOUND.into_response(),
     };
 
+    // Hide unpublished tracks from non-owners
+    if !t.track.visible {
+        let is_owner = sess.as_ref().map(|s| s.user.id == t.track.artist.id).unwrap_or(false);
+        if !is_owner {
+            return StatusCode::NOT_FOUND.into_response();
+        }
+    }
+
     let audio = Audio::new(&t.track, &state.manemix_dir);
     let events = event::for_track(&state.db, tid).await;
 
@@ -67,12 +75,21 @@ pub async fn show(
 /// GET /track/:tid/json
 pub async fn json(
     State(state): State<AppState>,
+    OptionalSession(sess, _theme): OptionalSession,
     Path(tid): Path<i32>,
 ) -> Response {
     let t = match ExtendedTrack::by_id(&state.db, tid).await {
         Some(t) => t,
         None => return StatusCode::NOT_FOUND.into_response(),
     };
+
+    // Hide unpublished tracks from non-owners
+    if !t.track.visible {
+        let is_owner = sess.as_ref().map(|s| s.user.id == t.track.artist.id).unwrap_or(false);
+        if !is_owner {
+            return StatusCode::NOT_FOUND.into_response();
+        }
+    }
 
     let events = event::for_track(&state.db, tid).await;
     let events_ctx: Vec<_> = events.iter().map(|e| e.context()).collect();
