@@ -203,8 +203,10 @@ export async function next(): Promise<void> {
 		}
 	}
 
-	// Nothing more to play.
-	playerState.update((s) => ({ ...s, isPlaying: false }));
+	// Nothing more to play — loop back to the start of the queue.
+	if (state.queue.length > 0) {
+		playInternal(state.queue[0], state.queue, 0, state.playbackContext);
+	}
 }
 
 /** Go to the previous track, or restart current track if >5s in or at start of queue. */
