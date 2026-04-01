@@ -13,11 +13,8 @@
 
   let { data } = $props<{ data: PageData }>();
   let user = $derived(data.user);
-  let events = $state<EventItem[]>([]);
-
-  $effect(() => {
-    events = data.user.events ?? [];
-  });
+  let refreshedEvents = $state<EventItem[] | null>(null);
+  let events = $derived(refreshedEvents ?? data.user.events ?? []);
   let isOwnProfile = $derived($auth.logged_in && $auth.uid === user.uid);
   let visiblePlaylists = $derived(
     isOwnProfile ? user.playlists : user.playlists.filter(p => p.is_public)
@@ -30,7 +27,7 @@
   async function refreshEvents() {
     try {
       const updated = await getUser(user.uid);
-      events = updated.events ?? [];
+      refreshedEvents = updated.events ?? [];
     } catch {}
   }
 </script>

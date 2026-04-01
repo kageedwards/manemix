@@ -93,8 +93,8 @@ pub async fn recent(pool: &PgPool, limit: i64) -> Vec<Event> {
 async fn fetch_events(pool: &PgPool, cond: &str, bind: Option<i32>, limit: i64) -> Vec<Event> {
     let limit_clause = if limit > 0 { format!(" LIMIT {limit}") } else { String::new() };
     let sql = format!(
-        "SELECT type, source_id, source_name, target_id, target_name, \
-         track_id, track_title, message, date AT TIME ZONE 'UTC' as date, id \
+        "SELECT type::text AS type, source_id, source_name, target_id, target_name, \
+         track_id, track_title, message, (date AT TIME ZONE 'UTC')::text as date, id \
          FROM events {cond} ORDER BY date DESC{limit_clause}"
     );
 
@@ -108,6 +108,11 @@ async fn fetch_events(pool: &PgPool, cond: &str, bind: Option<i32>, limit: i64) 
             .fetch_all(pool)
             .await
     };
+
+    match &rows {
+        Err(e) => tracing::error!("fetch_events error: {e}"),
+        _ => {}
+    }
 
     rows.unwrap_or_default().into_iter().map(|r| {
         let event_type = match r.r#type.as_str() {

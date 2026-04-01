@@ -13,12 +13,10 @@
 
   let { data } = $props<{ data: PageData }>();
   let track = $derived(data.track);
-  let events = $state<EventItem[]>([]);
+  let refreshedEvents = $state<EventItem[] | null>(null);
+  let events = $derived(refreshedEvents ?? data.track.events ?? []);
   let isOwner = $derived($auth.logged_in && $auth.uid === track.uid);
 
-  $effect(() => {
-    events = data.track.events ?? [];
-  });
   let ready = $derived($trackStatuses[track.tid]?.ready ?? true);
 
   $effect(() => {
@@ -52,7 +50,7 @@
   async function refreshComments() {
     try {
       const updated = await getTrack(track.tid);
-      events = updated.events ?? [];
+      refreshedEvents = updated.events ?? [];
     } catch {}
   }
 
