@@ -1,7 +1,7 @@
 use axum::extract::State;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::Form;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::AppState;
 use crate::models::account::Account;
@@ -29,6 +29,37 @@ pub async fn account_page(
 ) -> Html<String> {
     let a = Account::by_id(&state.db, sess.user.id).await.unwrap();
     Html(render_account(&state, &a, &sess, "", ""))
+}
+
+/// GET /api/v1/account — JSON account data for the SPA
+#[derive(Serialize)]
+struct AccountJson {
+    username: String,
+    email: String,
+    about: String,
+    notify: bool,
+    license: String,
+    theme: String,
+}
+
+pub async fn account_json(
+    State(state): State<AppState>,
+    RequiredSession(sess): RequiredSession,
+) -> Response {
+    match Account::by_id(&state.db, sess.user.id).await {
+        Some(a) => axum::Json(AccountJson {
+            username: a.user.name,
+            email: a.email,
+            about: a.about,
+            notify: a.notify,
+            license: a.license,
+            theme: a.theme,
+        }).into_response(),
+        None => {
+            let body = serde_json::json!({"error": "Account not found"});
+            (axum::http::StatusCode::NOT_FOUND, axum::Json(body)).into_response()
+        }
+    }
 }
 
 pub async fn account_submit(

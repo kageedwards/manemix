@@ -234,7 +234,7 @@ fn api_v1_routes() -> Router<AppState> {
         .route("/album/{id}/remove", post(album_api::remove_track))
 
         // Account
-        .route("/account", get(account::account_page).post(account::account_submit))
+        .route("/account", get(account::account_json).post(account::account_submit))
         .route("/account/delete", post(account::delete_submit))
         .route("/account/theme", post(account::theme_submit))
         .route("/account/license", post(track_actions::account_license_submit))
