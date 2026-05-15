@@ -3,9 +3,24 @@
     value: string;
     customValue?: string;
     label?: string;
+    makeDefault?: boolean;
+    applyAll?: boolean;
+    showMakeDefault?: boolean;
+    showApplyAll?: boolean;
     onchange?: (license: string) => void;
   }
-  let { value = $bindable(), customValue = $bindable(''), label = 'License', onchange }: Props = $props();
+  let {
+    value = $bindable(),
+    customValue = $bindable(''),
+    label = 'License',
+    makeDefault = $bindable(false),
+    applyAll = $bindable(false),
+    showMakeDefault = false,
+    showApplyAll = false,
+    onchange
+  }: Props = $props();
+
+  let expanded = $state(false);
 
   const licenses = [
     { value: 'Copyright', label: 'Copyright', desc: 'Default license. Most restrictive.' },
@@ -20,6 +35,12 @@
     { value: 'custom', label: 'Custom', desc: 'Specify your own license.' }
   ];
 
+  let currentLabel = $derived(
+    value === 'custom'
+      ? (customValue || 'Custom')
+      : (licenses.find(l => l.value === value)?.label ?? value)
+  );
+
   function handleChange(newValue: string) {
     value = newValue;
     onchange?.(newValue === 'custom' ? customValue : newValue);
@@ -27,25 +48,53 @@
 </script>
 
 <div class="card bg-base-200 p-4">
-  <span class="text-sm font-semibold mb-2 block">{label}</span>
-  <div class="flex flex-col gap-2">
-    {#each licenses as lic}
-      <label class="flex items-start gap-2 cursor-pointer">
-        <input type="radio" name="license" value={lic.value} checked={value === lic.value} onchange={() => handleChange(lic.value)} class="radio radio-xs radio-primary mt-0.5" />
-        <div>
-          <span class="text-sm font-medium">{lic.label}</span>
-          {#if lic.url}
-            <a href={lic.url} target="_blank" rel="noopener noreferrer" class="text-xs text-primary ml-1">(full license)</a>
-          {/if}
-          <p class="text-xs opacity-60 mt-0.5">{lic.desc}</p>
-        </div>
-      </label>
-    {/each}
-  </div>
-  {#if value === 'custom'}
-    <input type="text" bind:value={customValue} placeholder="Custom license" class="input input-bordered input-xs mt-2 w-full" />
+  <button
+    type="button"
+    class="flex items-center justify-between w-full text-left"
+    onclick={() => expanded = !expanded}
+    aria-expanded={expanded}
+  >
+    <span class="text-sm font-semibold">{label}</span>
+    <span class="flex items-center gap-2">
+      <span class="text-xs opacity-60">{currentLabel}</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-50 transition-transform" class:rotate-180={expanded} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </span>
+  </button>
+
+  {#if expanded}
+    <div class="flex flex-col gap-2 mt-3">
+      {#each licenses as lic}
+        <label class="flex items-start gap-2 cursor-pointer">
+          <input type="radio" name="license" value={lic.value} checked={value === lic.value} onchange={() => handleChange(lic.value)} class="radio radio-xs radio-primary mt-0.5" />
+          <div>
+            <span class="text-sm font-medium">{lic.label}</span>
+            {#if lic.url}
+              <a href={lic.url} target="_blank" rel="noopener noreferrer" class="text-xs text-primary ml-1">(full license)</a>
+            {/if}
+            <p class="text-xs opacity-60 mt-0.5">{lic.desc}</p>
+          </div>
+        </label>
+      {/each}
+    </div>
+    {#if value === 'custom'}
+      <input type="text" bind:value={customValue} placeholder="Custom license" class="input input-bordered input-xs mt-2 w-full" />
+    {/if}
+    <div class="text-xs mt-2">
+      <a href="https://creativecommons.org/licenses/" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">More about Creative Commons licenses</a>
+    </div>
+    {#if showMakeDefault || showApplyAll}
+      <div class="flex gap-4 mt-3 pt-2 border-t border-base-300">
+        {#if showMakeDefault}
+          <label class="flex items-center gap-1 cursor-pointer text-xs">
+            <input type="checkbox" bind:checked={makeDefault} class="checkbox checkbox-xs" /> Make default
+          </label>
+        {/if}
+        {#if showApplyAll}
+          <label class="flex items-center gap-1 cursor-pointer text-xs">
+            <input type="checkbox" bind:checked={applyAll} class="checkbox checkbox-xs" /> Apply to all tracks
+          </label>
+        {/if}
+      </div>
+    {/if}
   {/if}
-  <div class="text-xs mt-2">
-    <a href="https://creativecommons.org/licenses/" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">More about Creative Commons licenses</a>
-  </div>
 </div>

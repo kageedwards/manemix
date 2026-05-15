@@ -156,15 +156,7 @@
       </div>
 
       <!-- License -->
-      <LicensePicker bind:value={license} bind:customValue={customLicense} />
-      <div class="flex gap-4 mt-2">
-        <label class="flex items-center gap-1 cursor-pointer text-xs">
-          <input type="checkbox" bind:checked={mkdefault} class="checkbox checkbox-xs" /> Make default
-        </label>
-        <label class="flex items-center gap-1 cursor-pointer text-xs">
-          <input type="checkbox" bind:checked={retro} class="checkbox checkbox-xs" /> Apply to all tracks
-        </label>
-      </div>
+      <LicensePicker bind:value={license} bind:customValue={customLicense} bind:makeDefault={mkdefault} bind:applyAll={retro} showMakeDefault showApplyAll />
 
       <!-- Save button -->
       <button type="submit" class="btn btn-primary btn-sm" disabled={saving}>
