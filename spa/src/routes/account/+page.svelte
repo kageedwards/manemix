@@ -3,6 +3,7 @@
   import { auth, setAuth } from '$lib/stores/auth';
   import { apiFetch, getMe } from '$lib/api/client';
   import { goto } from '$app/navigation';
+  import { updateArtistName } from '$lib/stores/player';
   import LicensePicker from '$lib/components/LicensePicker.svelte';
 
   let name = $state('');
@@ -62,6 +63,7 @@
       });
       const me = await getMe();
       setAuth(me);
+      if ($auth.uid) updateArtistName($auth.uid, name);
       message = 'Changes saved';
     } catch (err: unknown) {
       error = err instanceof Error ? err.message : 'Failed to save changes';

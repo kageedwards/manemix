@@ -27,6 +27,28 @@ const DEFAULT_STATE: PlayerState = {
 
 export const playerState = writable<PlayerState>(DEFAULT_STATE);
 
+/** Update metadata for a track in the queue (e.g. after rename). */
+export function updateTrackMeta(tid: number, updates: Partial<Pick<Track, 'title' | 'username'>>) {
+	playerState.update((s) => {
+		const queue = s.queue.map(t => t.tid === tid ? { ...t, ...updates } : t);
+		const currentTrack = s.currentTrack?.tid === tid
+			? { ...s.currentTrack, ...updates }
+			: s.currentTrack;
+		return { ...s, queue, currentTrack };
+	});
+}
+
+/** Update username for all tracks by a given user in the queue. */
+export function updateArtistName(uid: number, username: string) {
+	playerState.update((s) => {
+		const queue = s.queue.map(t => t.uid === uid ? { ...t, username } : t);
+		const currentTrack = s.currentTrack?.uid === uid
+			? { ...s.currentTrack, username }
+			: s.currentTrack;
+		return { ...s, queue, currentTrack };
+	});
+}
+
 // --- Audio element (lazy, SSR-safe) ---
 
 let audio: HTMLAudioElement | null = null;

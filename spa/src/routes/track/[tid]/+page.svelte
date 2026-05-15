@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { play, playerState, pause, resume } from '$lib/stores/player';
+  import { play, playerState, pause, resume, updateTrackMeta } from '$lib/stores/player';
   import { auth } from '$lib/stores/auth';
   import { tt } from '$lib/i18n';
   import { apiFetch, addTrackToPlaylist, getTrack, createPlaylist } from '$lib/api/client';

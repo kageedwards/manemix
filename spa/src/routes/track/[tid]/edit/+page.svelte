@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { auth } from '$lib/stores/auth';
   import { apiFetch, getTrack } from '$lib/api/client';
+  import { updateTrackMeta } from '$lib/stores/player';
   import TagInput from '$lib/components/TagInput.svelte';
   import LicensePicker from '$lib/components/LicensePicker.svelte';
   import type { ExtendedTrack } from '$lib/types/index.js';
@@ -63,6 +64,7 @@
         })
       ]);
       message = 'Saved';
+      updateTrackMeta(tid, { title });
     } catch (err: unknown) {
       error = err instanceof Error ? err.message : 'Failed to save';
     } finally { saving = false; }

@@ -35,6 +35,8 @@
           <a href="/track/{event.tid}" class="text-primary hover:underline">{event.track_title}</a>
         {:else if event.is_follow}
           <a href="/user/{event.target_uid}" class="text-primary hover:underline">{event.target_name}</a>
+        {:else if event.is_user_comment}
+          <a href="/user/{event.target_uid}" class="text-primary hover:underline">{event.target_name}'s page</a>
         {/if}
         <span class="text-xs opacity-40 ml-1">{event.fuzzy_time}</span>
       </div>
