@@ -18,6 +18,7 @@ pub struct AccountForm {
     about: Option<String>,
     notify: Option<String>,
     theme: Option<String>,
+    license: Option<String>,
     oldpw: Option<String>,
     newpw: Option<String>,
     newpwconf: Option<String>,
@@ -176,14 +177,16 @@ async fn apply_account_changes(
         Some("dark") => "dark",
         _ => "auto",
     };
+    let final_license = form.license.clone().unwrap_or_else(|| a.license.clone());
     let _ = sqlx::query(
-        "UPDATE users SET name = $1, email = $2, about = $3, notify = $4, theme = $5 WHERE id = $6"
+        "UPDATE users SET name = $1, email = $2, about = $3, notify = $4, theme = $5, license = $6 WHERE id = $7"
     )
     .bind(&final_name)
     .bind(&final_email)
     .bind(&about)
     .bind(notify)
     .bind(theme)
+    .bind(&final_license)
     .bind(a.user.id)
     .execute(&state.db)
     .await;

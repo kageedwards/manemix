@@ -3,10 +3,13 @@
   import { auth, setAuth } from '$lib/stores/auth';
   import { apiFetch, getMe } from '$lib/api/client';
   import { goto } from '$app/navigation';
+  import LicensePicker from '$lib/components/LicensePicker.svelte';
 
   let name = $state('');
   let email = $state('');
   let about = $state('');
+  let license = $state('Copyright');
+  let customLicense = $state('');
   let oldpw = $state('');
   let newpw = $state('');
   let newpwconf = $state('');
@@ -25,13 +28,14 @@
 
   async function loadAccount() {
     try {
-      const data = await apiFetch<{ username: string; email: string; about: string }>('/account');
+      const data = await apiFetch<{ username: string; email: string; about: string; license: string }>('/account');
       name = data.username;
       email = data.email;
       about = data.about;
+      const knownLicenses = ['Copyright', 'CC BY-NC', 'CC BY', 'CC BY-SA', 'CC BY-ND', 'CC BY-NC-SA', 'CC BY-NC-ND', 'Public Domain'];
+      if (knownLicenses.includes(data.license)) { license = data.license; } else { license = 'custom'; customLicense = data.license; }
       loaded = true;
     } catch {
-      // Account endpoint may not return JSON yet — use auth store
       name = $auth.username ?? '';
       loaded = true;
     }
@@ -52,6 +56,7 @@
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           name, email, about,
+          license: license === 'custom' ? customLicense : license,
           ...(oldpw ? { oldpw, newpw, newpwconf } : {})
         }).toString()
       });
@@ -105,6 +110,9 @@
         <span class="text-sm font-medium">About</span>
         <textarea bind:value={about} class="textarea textarea-bordered w-full" rows="4"></textarea>
       </div>
+
+      <!-- Default License -->
+      <LicensePicker bind:value={license} bind:customValue={customLicense} label="Default License" />
 
       <div class="divider text-xs opacity-50">Change Password (optional)</div>
 
