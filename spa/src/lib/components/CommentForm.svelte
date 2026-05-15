@@ -42,7 +42,7 @@
       type="text"
       bind:value={name}
       placeholder="Name (optional)"
-      class="input input-sm input-bordered"
+      class="input input-sm input-bordered w-full"
     />
   {/if}
 
@@ -52,7 +52,7 @@
   <textarea
     bind:value={message}
     placeholder={t($translations, 'track_post_comment')}
-    class="textarea textarea-bordered text-sm"
+    class="textarea textarea-bordered text-sm w-full"
     rows="3"
     required
   ></textarea>
