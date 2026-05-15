@@ -64,6 +64,23 @@ pub async fn by_tag_json(State(state): State<AppState>, Path(tag): Path<String>)
     json_array(&state, track::by_tag(&state.db, &tag).await)
 }
 
+/// GET /api/v1/tags — all tags with usage counts
+pub async fn tags_json(State(state): State<AppState>) -> Response {
+    let rows: Vec<(String, i64)> = sqlx::query_as(
+        "SELECT tag, COUNT(*) as count FROM (SELECT unnest(tags) AS tag FROM tracks WHERE visible = true) t \
+         GROUP BY tag ORDER BY count DESC, tag ASC"
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    let items: Vec<_> = rows.iter().map(|(tag, count)| {
+        serde_json::json!({ "tag": tag, "count": count })
+    }).collect();
+
+    axum::Json(items).into_response()
+}
+
 // --- JSON endpoints ---
 
 pub async fn latest_json(State(state): State<AppState>) -> Response {

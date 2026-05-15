@@ -208,6 +208,7 @@ fn api_v1_routes() -> Router<AppState> {
         .route("/tracks/search/exact", get(tracks::exact_search_json))
         .route("/tracks/all", get(tracks::all_json))
         .route("/tracks/tag/{tag}", get(tracks::by_tag_json))
+        .route("/tags", get(tracks::tags_json))
 
         // Users
         .route("/user/{uid}", get(user::json))
