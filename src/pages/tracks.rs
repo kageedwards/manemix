@@ -60,6 +60,10 @@ pub async fn by_tag(State(state): State<AppState>, OptionalSession(sess, theme):
     render_list(&state, &tag, &tracks, false, false, 1, sess.as_ref(), &theme)
 }
 
+pub async fn by_tag_json(State(state): State<AppState>, Path(tag): Path<String>) -> Response {
+    json_array(&state, track::by_tag(&state.db, &tag).await)
+}
+
 // --- JSON endpoints ---
 
 pub async fn latest_json(State(state): State<AppState>) -> Response {
