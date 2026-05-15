@@ -15,5 +15,8 @@
 {#if data.tracks.length > 0}
   <TrackList tracks={data.tracks} playbackContext={{ context: 'tag', param: data.tag }} />
 {:else}
-  <p class="opacity-60">No tracks tagged "{data.tag}".</p>
+  <div class="flex flex-col items-center justify-center py-20 gap-4">
+    <h1 class="text-4xl font-bold text-primary">No tracks tagged &ldquo;{data.tag}&rdquo;</h1>
+    <a href="/" class="btn btn-sm btn-ghost mt-4">← Back to Home</a>
+  </div>
 {/if}
