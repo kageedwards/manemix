@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tt } from '$lib/i18n';
+  import { auth } from '$lib/stores/auth';
   import NewsBanner from '$lib/components/NewsBanner.svelte';
   import FeaturedCarousel from '$lib/components/FeaturedCarousel.svelte';
   import TrackList from '$lib/components/TrackList.svelte';
@@ -11,6 +12,15 @@
   let heroTracks = $derived(
     data.featured.length > 0 ? data.featured : data.latest.slice(0, 1)
   );
+
+  let maxCount = $derived(Math.max(...data.tags.map(t => t.count), 1));
+  let minCount = $derived(Math.min(...data.tags.map(t => t.count), 1));
+
+  function fontSize(count: number): string {
+    if (maxCount === minCount) return '1rem';
+    const ratio = (count - minCount) / (maxCount - minCount);
+    return `${0.75 + ratio * 2}rem`;
+  }
 </script>
 
 <svelte:head>
@@ -44,19 +54,39 @@
   </div>
 </div>
 
-<!-- Site introduction -->
-<section class="max-w-2xl mx-auto px-4 py-12 text-center">
-  <h2 class="text-2xl font-bold mb-4">Share your music with the world</h2>
-  <p class="text-base opacity-70 mb-3">
-    Favorite tracks, follow artists, and create playlists. Upload your own music for everyone to listen to.
-  </p>
-  <p class="text-base opacity-70 mb-6">
-    No limits on formats, filesize, or downloads. Tracks play in the best conditions on every device and browser.
-  </p>
-  {#if !data.ticker.length}
-    <a href="/register" class="btn btn-primary">Get Started</a>
+<!-- Below the fold: intro for guests, tag cloud for logged-in users -->
+{#if $auth.logged_in}
+  {#if data.tags.length > 0}
+    <section class="max-w-3xl mx-auto px-4 py-12 text-center">
+      <h2 class="text-xl font-bold mb-6">Explore Tags</h2>
+      <div class="flex flex-wrap gap-3 items-baseline justify-center">
+        {#each data.tags as item (item.tag)}
+          <a
+            href="/tracks/tag/{item.tag}"
+            class="hover:text-primary transition-colors"
+            style="font-size: {fontSize(item.count)}; opacity: {0.5 + (item.count - minCount) / (maxCount - minCount) * 0.5}"
+          >
+            {item.tag}
+          </a>
+        {/each}
+      </div>
+    </section>
   {/if}
-</section>
+{:else}
+  <section class="max-w-2xl mx-auto px-4 py-12 text-center">
+    <h2 class="text-2xl font-bold mb-4">Share your music with the world</h2>
+    <p class="text-base opacity-70 mb-3">
+      Favorite tracks, follow artists, and create playlists. Upload your own music for everyone to listen to.
+    </p>
+    <p class="text-base opacity-70 mb-6">
+      No limits on formats, filesize, or downloads. Tracks play in the best conditions on every device and browser.
+    </p>
+    <div class="flex gap-3 justify-center">
+      <a href="/register" class="btn btn-primary">Get Started</a>
+      <a href="/login" class="btn btn-ghost">Login</a>
+    </div>
+  </section>
+{/if}
 
 <style>
   .content-panel::before {
