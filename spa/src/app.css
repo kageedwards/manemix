@@ -72,3 +72,9 @@
 .form-control > .label-text {
   display: block;
 }
+
+/* Make form inputs fill their container width */
+.form-control .input,
+.form-control .input-bordered {
+  width: 100%;
+}
