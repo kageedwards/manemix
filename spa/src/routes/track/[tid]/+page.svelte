@@ -2,7 +2,7 @@
   import { play, playerState, pause, resume } from '$lib/stores/player';
   import { auth } from '$lib/stores/auth';
   import { tt } from '$lib/i18n';
-  import { apiFetch, addTrackToPlaylist, getTrack } from '$lib/api/client';
+  import { apiFetch, addTrackToPlaylist, getTrack, createPlaylist } from '$lib/api/client';
   import { trackStatuses, monitorTrack, unmonitorTrack } from '$lib/stores/trackStatus';
   import { formatDate } from '$lib/utils/date';
   import LicenseBadge from '$lib/components/LicenseBadge.svelte';
@@ -31,6 +31,10 @@
   let showPlaylistMenu = $state(false);
   let playlistMsg = $state('');
   let playlistsLoaded = $state(false);
+  let showNewPlaylist = $state(false);
+  let newPlaylistName = $state('');
+  let newPlaylistPublic = $state(false);
+  let creatingPlaylist = $state(false);
 
   $effect(() => {
     if ($auth.logged_in && !playlistsLoaded) {
@@ -48,6 +52,26 @@
       showPlaylistMenu = false;
       setTimeout(() => playlistMsg = '', 2000);
     } catch { playlistMsg = 'Failed'; }
+  }
+
+  async function handleCreateAndAdd() {
+    if (!newPlaylistName.trim()) return;
+    creatingPlaylist = true;
+    try {
+      const res = await createPlaylist(newPlaylistName.trim(), '', newPlaylistPublic);
+      await addTrackToPlaylist(res.id, track.tid);
+      playlistMsg = 'Created & added';
+      showPlaylistMenu = false;
+      showNewPlaylist = false;
+      newPlaylistName = '';
+      newPlaylistPublic = false;
+      // Refresh playlists
+      apiFetch<{ playlists: PlaylistSummary[] }>(`/user/${$auth.uid}`).then(u => {
+        myPlaylists = u.playlists ?? [];
+      }).catch(() => {});
+      setTimeout(() => playlistMsg = '', 2000);
+    } catch { playlistMsg = 'Failed'; }
+    finally { creatingPlaylist = false; }
   }
 
   async function refreshComments() {
@@ -108,7 +132,22 @@
                   {:else}
                     <span class="block px-3 py-1.5 text-sm opacity-60">No playlists</span>
                   {/if}
-                  <a href="/playlist/new" class="block px-3 py-1.5 text-sm text-primary hover:bg-base-300 border-t border-base-300">Create new…</a>
+                  <button class="block w-full text-left px-3 py-1.5 text-sm text-primary hover:bg-base-300 border-t border-base-300 cursor-pointer" onclick={() => showNewPlaylist = !showNewPlaylist}>
+                    {showNewPlaylist ? 'Cancel' : 'Create new…'}
+                  </button>
+                  {#if showNewPlaylist}
+                    <div class="px-3 py-2 border-t border-base-300 flex flex-col gap-1.5">
+                      <input type="text" bind:value={newPlaylistName} placeholder="Playlist name" class="input input-xs input-bordered w-full" />
+                      <div class="flex items-center justify-between">
+                        <label class="flex items-center gap-1 cursor-pointer text-xs opacity-70">
+                          <input type="checkbox" bind:checked={newPlaylistPublic} class="checkbox checkbox-xs" /> Public
+                        </label>
+                        <button class="btn btn-xs btn-primary" disabled={creatingPlaylist || !newPlaylistName.trim()} onclick={handleCreateAndAdd}>
+                          {creatingPlaylist ? '…' : 'Create'}
+                        </button>
+                      </div>
+                    </div>
+                  {/if}
                 </div>
               {/if}
               {#if playlistMsg}<span class="text-xs ml-1 text-success">{playlistMsg}</span>{/if}
