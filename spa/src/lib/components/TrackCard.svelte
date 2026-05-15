@@ -43,30 +43,26 @@
         loading="lazy"
       />
       {#if isPlaying}
-        <div class="absolute inset-0 rounded bg-black/50 flex items-end justify-center gap-[3px] pb-2">
-          <span class="eq-bar eq-bar-1"></span>
-          <span class="eq-bar eq-bar-2"></span>
-          <span class="eq-bar eq-bar-3"></span>
-          <span class="eq-bar eq-bar-4"></span>
+        <div class="absolute inset-0 rounded bg-black/50 flex items-center justify-center">
+          <span class="flex items-end gap-[2px] h-[22px]">
+            <span class="eq-bar eq-bar-1 eq-playing"></span>
+            <span class="eq-bar eq-bar-2 eq-playing"></span>
+            <span class="eq-bar eq-bar-3 eq-playing"></span>
+            <span class="eq-bar eq-bar-4 eq-playing"></span>
+            <span class="eq-bar eq-bar-5 eq-playing"></span>
+          </span>
         </div>
       {/if}
     </a>
   {:else}
-    <a href="/track/{track.tid}" class="shrink-0 w-14 h-14 rounded bg-base-300 flex items-end justify-center gap-[3px] pb-2">
-      {#if isPlaying}
-        <span class="eq-bar eq-bar-1 playing"></span>
-        <span class="eq-bar eq-bar-2 playing"></span>
-        <span class="eq-bar eq-bar-3 playing"></span>
-        <span class="eq-bar eq-bar-4 playing"></span>
-      {:else}
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-base-content opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-          <line x1="4" y1="18" x2="4" y2="10"/>
-          <line x1="8" y1="18" x2="8" y2="4"/>
-          <line x1="12" y1="18" x2="12" y2="8"/>
-          <line x1="16" y1="18" x2="16" y2="6"/>
-          <line x1="20" y1="18" x2="20" y2="12"/>
-        </svg>
-      {/if}
+    <a href="/track/{track.tid}" class="shrink-0 w-14 h-14 rounded bg-base-300 flex items-center justify-center">
+      <span class="flex items-end gap-[2px] h-[22px]">
+        <span class="eq-bar eq-bar-1" class:eq-playing={isPlaying}></span>
+        <span class="eq-bar eq-bar-2" class:eq-playing={isPlaying}></span>
+        <span class="eq-bar eq-bar-3" class:eq-playing={isPlaying}></span>
+        <span class="eq-bar eq-bar-4" class:eq-playing={isPlaying}></span>
+        <span class="eq-bar eq-bar-5" class:eq-playing={isPlaying}></span>
+      </span>
     </a>
   {/if}
 
@@ -109,22 +105,29 @@
     width: 3px;
     border-radius: 1px;
     background: currentColor;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+  }
+  /* Static heights matching the original SVG icon proportions */
+  .eq-bar-1 { height: 10px; }
+  .eq-bar-2 { height: 18px; }
+  .eq-bar-3 { height: 12px; }
+  .eq-bar-4 { height: 16px; }
+  .eq-bar-5 { height: 8px; }
+
+  /* Animated state */
+  .eq-bar.eq-playing {
     opacity: 0.8;
   }
-  /* Static heights for overlay on art */
-  .eq-bar-1 { animation: eq1 0.45s ease-in-out infinite alternate; }
-  .eq-bar-2 { animation: eq2 0.55s ease-in-out infinite alternate; }
-  .eq-bar-3 { animation: eq3 0.4s ease-in-out infinite alternate; }
-  .eq-bar-4 { animation: eq4 0.5s ease-in-out infinite alternate; }
+  .eq-bar-1.eq-playing { animation: eq1 0.45s ease-in-out infinite alternate; }
+  .eq-bar-2.eq-playing { animation: eq2 0.55s ease-in-out infinite alternate; }
+  .eq-bar-3.eq-playing { animation: eq3 0.4s ease-in-out infinite alternate; }
+  .eq-bar-4.eq-playing { animation: eq4 0.5s ease-in-out infinite alternate; }
+  .eq-bar-5.eq-playing { animation: eq5 0.48s ease-in-out infinite alternate; }
 
-  /* Larger bars for the no-art placeholder */
-  .eq-bar.playing {
-    width: 4px;
-    opacity: 0.4;
-  }
-
-  @keyframes eq1 { from { height: 6px; } to { height: 18px; } }
-  @keyframes eq2 { from { height: 14px; } to { height: 8px; } }
-  @keyframes eq3 { from { height: 8px; } to { height: 22px; } }
-  @keyframes eq4 { from { height: 16px; } to { height: 10px; } }
+  @keyframes eq1 { from { height: 10px; } to { height: 20px; } }
+  @keyframes eq2 { from { height: 18px; } to { height: 8px; } }
+  @keyframes eq3 { from { height: 12px; } to { height: 22px; } }
+  @keyframes eq4 { from { height: 16px; } to { height: 6px; } }
+  @keyframes eq5 { from { height: 8px; } to { height: 16px; } }
 </style>
