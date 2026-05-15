@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { play } from '$lib/stores/player';
+  import { play, playerState, pause, resume } from '$lib/stores/player';
   import { auth } from '$lib/stores/auth';
   import { tt } from '$lib/i18n';
   import { apiFetch, addTrackToPlaylist, getTrack } from '$lib/api/client';
@@ -18,6 +18,8 @@
   let isOwner = $derived($auth.logged_in && $auth.uid === track.uid);
 
   let ready = $derived($trackStatuses[track.tid]?.ready ?? true);
+  let isCurrentTrack = $derived($playerState.currentTrack?.tid === track.tid);
+  let isPlaying = $derived(isCurrentTrack && $playerState.isPlaying);
 
   $effect(() => {
     monitorTrack(track.tid);
@@ -56,7 +58,9 @@
 
   function handlePlay() {
     if (!ready) return;
-    play(track);
+    if (isPlaying) { pause(); }
+    else if (isCurrentTrack) { resume(); }
+    else { play(track); }
   }
 
   const formats = [
@@ -84,7 +88,7 @@
 
         <div class="flex gap-3 mt-4 flex-wrap items-center">
           <button class="btn btn-md" class:btn-primary={ready} class:cursor-not-allowed={!ready} onclick={handlePlay} disabled={!ready} style={!ready ? 'opacity: 0.7;' : ''}>
-            {ready ? $tt('player_play') : $tt('track_transcoding')}
+            {ready ? (isPlaying ? $tt('player_pause') : $tt('player_play')) : $tt('track_transcoding')}
           </button>
           {#if $auth.logged_in && !isOwner}
             <FavoriteButton tid={track.tid} />

@@ -15,6 +15,115 @@
   let stars: Star[] = [];
   let w = 0, h = 0, cx = 0, cy = 0;
 
+  // Clip overlay state
+  let videoEl = $state<HTMLVideoElement | null>(null);
+  let currentClip = $state('');
+  let clipVisible = $state(false);
+  let clipsEnabled = $state(false);
+  let avgHistory: number[] = [];
+  let lastClipChange = 0;
+  const CLIP_COOLDOWN = 8000; // ms between clip changes
+  const ENERGY_THRESHOLD = 30; // avg jump to trigger a new clip
+  const MIN_BANDWIDTH_MBPS = 2;
+
+  // Bandwidth check — determines if clips should load
+  let bandwidthChecked = false;
+  async function checkBandwidth(): Promise<boolean> {
+    // Try Network Information API first (Chrome, Edge, Android)
+    const conn = (navigator as any).connection;
+    if (conn?.downlink) {
+      return conn.downlink >= MIN_BANDWIDTH_MBPS;
+    }
+    // Fallback: time a small fetch to estimate bandwidth
+    try {
+      const url = '/static/favicon.ico';
+      const start = performance.now();
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) return true; // If we can't test, assume fast enough
+      await res.blob();
+      const elapsed = (performance.now() - start) / 1000;
+      if (elapsed < 0.01) return true; // Sub-10ms means local/fast network
+      const bits = (await (await fetch(url)).blob()).size * 8;
+      const mbps = (bits / elapsed) / 1_000_000;
+      return mbps >= MIN_BANDWIDTH_MBPS;
+    } catch {
+      return true; // On error, assume fast enough — clips are optional
+    }
+  }
+
+  // Derpibooru clip pool — refreshed every 30 minutes
+  let clipPool: string[] = [];
+  let lastPoolFetch = 0;
+  let poolFetching = false;
+  const POOL_REFRESH_INTERVAL = 30 * 60 * 1000;
+  const DERPI_SEARCH = 'https://derpibooru.org/api/v1/json/search/images?q=webm,safe,screencap,-audio,-music,-g1,-g2,-g3,-vulgar,size.lte:2500000,aspect_ratio.gte:1.15,aspect_ratio.lte:2&sf=random&per_page=10';
+
+  async function refreshClipPool() {
+    if (poolFetching) return;
+    poolFetching = true;
+    try {
+      const res = await fetch(DERPI_SEARCH);
+      if (!res.ok) return;
+      const data = await res.json();
+      const urls: string[] = (data.images ?? [])
+        .filter((img: { format: string; representations?: { full?: string } }) =>
+          img.format === 'webm' && img.representations?.full)
+        .map((img: { representations: { full: string } }) => img.representations.full);
+      if (urls.length > 0) {
+        clipPool = urls;
+        lastPoolFetch = Date.now();
+      }
+    } catch { /* silently fail — clips are decorative */ }
+    finally { poolFetching = false; }
+  }
+
+  function pickRandomClip(): string {
+    if (clipPool.length === 0) return '';
+    const available = clipPool.filter(c => c !== currentClip);
+    return available[Math.floor(Math.random() * available.length)] ?? clipPool[0];
+  }
+
+  function checkEnergyTransition(avg: number) {
+    if (!clipsEnabled) return;
+    avgHistory.push(avg);
+    if (avgHistory.length > 30) avgHistory.shift();
+    if (avgHistory.length < 10) return;
+
+    // Refresh pool if stale
+    if (Date.now() - lastPoolFetch > POOL_REFRESH_INTERVAL) {
+      refreshClipPool();
+    }
+
+    const now = performance.now();
+    if (now - lastClipChange < CLIP_COOLDOWN) return;
+    if (clipPool.length === 0) return;
+
+    // Show first clip after a few seconds if none triggered yet
+    if (!currentClip && avgHistory.length >= 20) {
+      currentClip = pickRandomClip();
+      clipVisible = true;
+      lastClipChange = now;
+      if (videoEl) { videoEl.src = currentClip; videoEl.play().catch(() => {}); }
+      return;
+    }
+
+    // Compare recent average to older average
+    const recent = avgHistory.slice(-5).reduce((a, b) => a + b, 0) / 5;
+    const older = avgHistory.slice(0, 5).reduce((a, b) => a + b, 0) / 5;
+
+    if (recent - older > ENERGY_THRESHOLD) {
+      const clip = pickRandomClip();
+      if (!clip) return;
+      currentClip = clip;
+      clipVisible = true;
+      lastClipChange = now;
+      if (videoEl) {
+        videoEl.src = currentClip;
+        videoEl.play().catch(() => {});
+      }
+    }
+  }
+
   const TOTAL_STARS = 1200;
   const STARS_BREAK_POINT = 140;
   const fftSize = 1024;
@@ -106,6 +215,8 @@
     avg /= freqData.length;
     const hit = avg > STARS_BREAK_POINT;
 
+    checkEnergyTransition(avg);
+
     // Background
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, c.bg1);
@@ -178,9 +289,16 @@
     if ($playerState.isPlaying && analyser && !animId) {
       draw();
     }
+    // Fetch clip pool on first play
+    if ($playerState.isPlaying && !bandwidthChecked) {
+      bandwidthChecked = true;
+      clipsEnabled = true;
+      refreshClipPool();
+    }
     if (!$playerState.isPlaying && animId) {
       cancelAnimationFrame(animId);
       animId = 0;
+      clipVisible = false;
       // Clear canvas and reset stars after fade-out completes
       setTimeout(() => {
         if (ctx && canvas) {
@@ -195,6 +313,18 @@
 {#if $playerState.currentTrack}
   <div class="viz-canvas fixed inset-0 pointer-events-none transition-opacity duration-1000" style="z-index: -1; opacity: {$playerState.isPlaying ? 1 : 0};">
     <canvas bind:this={canvas} class="w-full h-full"></canvas>
+    {#if clipsEnabled && currentClip}
+      <video
+        bind:this={videoEl}
+        src={currentClip}
+        muted
+        autoplay
+        loop
+        playsinline
+        class="clip-overlay absolute inset-0 w-full h-full object-cover pointer-events-none"
+        class:clip-visible={clipVisible}
+      ></video>
+    {/if}
   </div>
   <div class="viz-credit fixed right-2 text-xs opacity-30 pointer-events-auto group text-right hidden md:block" style="z-index: 1;">
     <span class="group-hover:opacity-0 transition-opacity duration-300">viz</span>
@@ -208,6 +338,14 @@
   }
   .viz-credit {
     bottom: calc(var(--player-height-compact) + 0.25rem);
+  }
+  .clip-overlay {
+    opacity: 0;
+    mix-blend-mode: screen;
+    transition: opacity 2s ease-in-out;
+  }
+  .clip-overlay.clip-visible {
+    opacity: 0.12;
   }
   @media (min-width: 768px) {
     .viz-canvas {
