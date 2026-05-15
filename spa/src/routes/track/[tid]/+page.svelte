@@ -4,6 +4,7 @@
   import { tt } from '$lib/i18n';
   import { apiFetch, addTrackToPlaylist, getTrack } from '$lib/api/client';
   import { trackStatuses, monitorTrack, unmonitorTrack } from '$lib/stores/trackStatus';
+  import { formatDate } from '$lib/utils/date';
   import LicenseBadge from '$lib/components/LicenseBadge.svelte';
   import EventList from '$lib/components/EventList.svelte';
   import FavoriteButton from '$lib/components/FavoriteButton.svelte';
@@ -84,7 +85,7 @@
       <div class="flex-1 min-w-0">
         <h1 class="text-3xl font-extrabold leading-tight text-ellipsis truncate">{track.title}</h1>
         <a href="/user/{track.uid}" class="text-lg text-primary hover:underline">{track.username}</a>
-        <span class="text-sm opacity-50 ml-2">{track.date}</span>
+        <span class="text-sm opacity-50 ml-2">{formatDate(track.date)}</span>
 
         <div class="flex gap-3 mt-4 flex-wrap items-center">
           <button class="btn btn-md" class:btn-primary={ready} class:cursor-not-allowed={!ready} onclick={handlePlay} disabled={!ready} style={!ready ? 'opacity: 0.7;' : ''}>

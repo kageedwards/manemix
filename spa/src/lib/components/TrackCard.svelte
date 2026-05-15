@@ -3,6 +3,7 @@
   import { play, playerState, pause, resume } from '$lib/stores/player';
   import { translations, t } from '$lib/i18n';
   import { trackStatuses, monitorTrack, unmonitorTrack } from '$lib/stores/trackStatus';
+  import { formatDate, formatDateShort } from '$lib/utils/date';
 
   interface Props {
     track: Track;
@@ -73,7 +74,10 @@
     <a href="/user/{track.uid}" class="text-sm opacity-70 hover:text-primary">
       {track.username}
     </a>
-    <span class="text-xs opacity-50 ml-2">{track.date}</span>
+    <span class="text-xs opacity-50 ml-2">
+      <span class="hidden sm:inline">{formatDate(track.date)}</span>
+      <span class="sm:hidden">{formatDateShort(track.date)}</span>
+    </span>
     {#if !track.is_visible}
       <span class="badge badge-sm badge-outline border-warning text-warning bg-transparent ml-2">Unpublished</span>
     {/if}
