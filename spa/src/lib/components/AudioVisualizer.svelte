@@ -15,9 +15,11 @@
   let stars: Star[] = [];
   let w = 0, h = 0, cx = 0, cy = 0;
 
-  // Clip overlay state
-  let videoEl = $state<HTMLVideoElement | null>(null);
+  // Clip overlay state — dual videos for crossfade
+  let videoA = $state<HTMLVideoElement | null>(null);
+  let videoB = $state<HTMLVideoElement | null>(null);
   let currentClip = $state('');
+  let activeSlot = $state<'a' | 'b'>('a'); // which video is currently visible
   let clipVisible = $state(false);
   let clipsEnabled = $state(false);
   let avgHistory: number[] = [];
@@ -103,7 +105,8 @@
       currentClip = pickRandomClip();
       clipVisible = true;
       lastClipChange = now;
-      if (videoEl) { videoEl.src = currentClip; videoEl.play().catch(() => {}); }
+      const el = activeSlot === 'a' ? videoA : videoB;
+      if (el) { el.src = currentClip; el.playbackRate = 0.5; el.play().catch(() => {}); }
       return;
     }
 
@@ -117,10 +120,15 @@
       currentClip = clip;
       clipVisible = true;
       lastClipChange = now;
-      if (videoEl) {
-        videoEl.src = currentClip;
-        videoEl.play().catch(() => {});
+      // Crossfade: load new clip into the inactive slot, then swap
+      const nextSlot = activeSlot === 'a' ? 'b' : 'a';
+      const nextEl = nextSlot === 'a' ? videoA : videoB;
+      if (nextEl) {
+        nextEl.src = clip;
+        nextEl.playbackRate = 0.5;
+        nextEl.play().catch(() => {});
       }
+      activeSlot = nextSlot;
     }
   }
 
@@ -315,14 +323,22 @@
     <canvas bind:this={canvas} class="w-full h-full"></canvas>
     {#if clipsEnabled && currentClip}
       <video
-        bind:this={videoEl}
-        src={currentClip}
+        bind:this={videoA}
         muted
         autoplay
         loop
         playsinline
         class="clip-overlay absolute inset-0 w-full h-full object-cover pointer-events-none"
-        class:clip-visible={clipVisible}
+        class:clip-visible={clipVisible && activeSlot === 'a'}
+      ></video>
+      <video
+        bind:this={videoB}
+        muted
+        autoplay
+        loop
+        playsinline
+        class="clip-overlay absolute inset-0 w-full h-full object-cover pointer-events-none"
+        class:clip-visible={clipVisible && activeSlot === 'b'}
       ></video>
     {/if}
   </div>
