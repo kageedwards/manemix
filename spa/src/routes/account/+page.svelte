@@ -132,10 +132,10 @@
       </div>
 
       {#if error}
-        <p class="text-error text-sm">{error}</p>
+        <div class="alert alert-error text-sm">{error}</div>
       {/if}
       {#if message}
-        <p class="text-success text-sm">{message}</p>
+        <div class="border border-success/40 bg-success/10 text-success rounded-lg px-4 py-2 text-sm">{message}</div>
       {/if}
 
       <button type="submit" class="btn btn-primary" disabled={loading}>

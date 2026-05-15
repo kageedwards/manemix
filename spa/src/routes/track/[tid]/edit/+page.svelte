@@ -192,8 +192,8 @@
       </label>
     </div>
 
-    {#if error}<p class="text-error text-sm mt-4">{error}</p>{/if}
-    {#if message}<p class="text-success text-sm mt-4">{message}</p>{/if}
+    {#if error}<div class="alert alert-error text-sm mt-4">{error}</div>{/if}
+    {#if message}<div class="border border-success/40 bg-success/10 text-success rounded-lg px-4 py-2 text-sm mt-4">{message}</div>{/if}
 
     <!-- Publish / Delete -->
     <div class="flex gap-2 mt-6 pt-4 border-t border-base-300">
