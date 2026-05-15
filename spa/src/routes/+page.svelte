@@ -21,26 +21,42 @@
   <NewsBanner items={data.ticker} />
 {/if}
 
-<FeaturedCarousel tracks={heroTracks} />
+<div class="min-h-[100vh]">
+  <FeaturedCarousel tracks={heroTracks} />
 
-<div class="content-panel relative rounded-t-xl pt-6 px-4 lg:px-6">
-  <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 relative z-10">
-    <!-- Latest tracks (wider column) -->
-    <section class="lg:col-span-3">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-xl font-bold">Latest</h2>
-        <a href="/tracks/latest" class="text-sm text-primary hover:underline">View all</a>
-      </div>
-      <TrackList tracks={data.latest} playbackContext={{ context: 'latest' }} />
-    </section>
+  <div class="content-panel relative rounded-t-xl pt-6 px-4 lg:px-6">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 relative z-10">
+      <!-- Latest tracks (wider column) -->
+      <section class="lg:col-span-3">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl font-bold">Latest</h2>
+          <a href="/tracks/latest" class="text-sm text-primary hover:underline">View all</a>
+        </div>
+        <TrackList tracks={data.latest} playbackContext={{ context: 'latest' }} />
+      </section>
 
-    <!-- Community activity (narrower column) -->
-    <section class="lg:col-span-2">
-      <h2 class="text-xl font-bold mb-3">Community</h2>
-      <ActivityFeed events={data.events} />
-    </section>
+      <!-- Community activity (narrower column) -->
+      <section class="lg:col-span-2">
+        <h2 class="text-xl font-bold mb-3">Community</h2>
+        <ActivityFeed events={data.events} />
+      </section>
+    </div>
   </div>
 </div>
+
+<!-- Site introduction -->
+<section class="max-w-2xl mx-auto px-4 py-12 text-center">
+  <h2 class="text-2xl font-bold mb-4">Share your music with the world</h2>
+  <p class="text-base opacity-70 mb-3">
+    Favorite tracks, follow artists, and create playlists. Upload your own music for everyone to listen to.
+  </p>
+  <p class="text-base opacity-70 mb-6">
+    No limits on formats, filesize, or downloads. Tracks play in the best conditions on every device and browser.
+  </p>
+  {#if !data.ticker.length}
+    <a href="/register" class="btn btn-primary">Get Started</a>
+  {/if}
+</section>
 
 <style>
   .content-panel::before {
