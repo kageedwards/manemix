@@ -38,7 +38,23 @@
 
   function handleVolume(e: Event) {
     const input = e.target as HTMLInputElement;
-    setVolume(parseFloat(input.value));
+    const val = parseFloat(input.value);
+    if (muted && val > 0) muted = false;
+    setVolume(val);
+  }
+
+  let muted = $state(false);
+  let volumeBeforeMute = 1;
+
+  function toggleMute() {
+    if (muted) {
+      setVolume(volumeBeforeMute);
+      muted = false;
+    } else {
+      volumeBeforeMute = $playerState.volume;
+      setVolume(0);
+      muted = true;
+    }
   }
 
   function togglePlayPause() {
@@ -150,15 +166,23 @@
 
     <!-- Volume -->
     <div class="flex items-center gap-1 w-28 shrink-0">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 8.5v7a4.47 4.47 0 002.5-3.5z"/>
-      </svg>
+      <button class="btn btn-ghost btn-xs btn-circle" onclick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'}>
+        {#if muted || $playerState.volume === 0}
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16.5 12A4.5 4.5 0 0014 8.5v2.09l2.5 2.5V12zM19 12c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0021 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 003.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+          </svg>
+        {:else}
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 8.5v7a4.47 4.47 0 002.5-3.5z"/>
+          </svg>
+        {/if}
+      </button>
       <input
         type="range"
         min="0"
         max="1"
         step="0.01"
-        value={$playerState.volume}
+        value={muted ? 0 : $playerState.volume}
         oninput={handleVolume}
         class="range range-xs flex-1"
         aria-label="Volume"
