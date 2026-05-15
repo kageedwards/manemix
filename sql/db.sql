@@ -27,6 +27,7 @@ CREATE TABLE tracks (
 CREATE INDEX track_title_idx ON tracks(title);
 CREATE INDEX track_visible_idx ON tracks(visible);
 CREATE INDEX track_uid_idx ON tracks(user_id);
+CREATE INDEX track_tags_gin ON tracks USING GIN (tags) WHERE visible = true;
 
 CREATE TABLE sessions (
     sid text not null,
