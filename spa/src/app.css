@@ -67,3 +67,8 @@
   --depth: 1;
   --noise: 0;
 }
+
+/* Ensure form labels sit above inputs consistently */
+.form-control > .label-text {
+  display: block;
+}
