@@ -363,6 +363,12 @@
   .clip-overlay.clip-visible {
     opacity: 0.12;
   }
+  :global([data-theme="manemix_light"]) .clip-overlay {
+    mix-blend-mode: multiply;
+  }
+  :global([data-theme="manemix_light"]) .clip-overlay.clip-visible {
+    opacity: 0.2;
+  }
   @media (min-width: 768px) {
     .viz-canvas {
       bottom: var(--player-height);
